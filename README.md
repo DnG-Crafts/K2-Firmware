@@ -26,3 +26,7 @@ Image: <a href=https://file2-cdn.creality.com/file/357c39813f2d5b408d385bad38843
 Files: <a href=https://github.com/DnG-Crafts/K2-Firmware/tree/ed6eb31ed010a61d58131a2c66a9ec9d4f222f38>CR0CN240110C10_ota_img_V1.1.2.10</a><br>
 Image: <a href=https://file2-cdn.creality.com/file/0be5c59fef5b8640712d8213a0ed1cc2/CR0CN240110C10_ota_img_V1.1.2.10.img>CR0CN240110C10_ota_img_V1.1.2.10.img</a><br>
 
+## Version 1.1.3.13
+Files: <a href=https://github.com/DnG-Crafts/K2-Firmware/>CR0CN240110C10_ota_img_V1.1.3.13</a><br>
+Image: <a href=https://file2-cdn.creality.com/file/2af16919096368092e7fab5da7436c70/CR0CN240110C10_ota_img_V1.1.3.13.img>CR0CN240110C10_ota_img_V1.1.3.13.img</a><br>
+

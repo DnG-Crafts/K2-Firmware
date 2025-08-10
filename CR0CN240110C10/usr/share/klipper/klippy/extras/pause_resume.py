@@ -9,6 +9,7 @@ from .tool import reportInformation
 class PauseResume:
     def __init__(self, config):
         self.printer = config.get_printer()
+        self.reactor = self.printer.get_reactor()
         self.gcode = self.printer.lookup_object('gcode')
         self.recover_velocity = config.getfloat('recover_velocity', 50.)
         self.v_sd = None
@@ -77,6 +78,7 @@ class PauseResume:
             try:
                 with open(self.v_sd.print_file_name_path, "r") as f:
                     data = f.read()
+                    logging.info("[print_file_name_path] POWER_LOSS_DATA: \n %s", data)
                     if len(data) == 0:
                         logging.error("%s f.read()==None read fail!!!" % self.v_sd.print_file_name_path)
                     response["file_state"] = True if json.loads(data) else False
@@ -90,12 +92,16 @@ class PauseResume:
         if os.path.exists(self.v_sd.user_print_refer_path):
             with open(self.v_sd.user_print_refer_path, "r") as f:
                 data = json.loads(f.read())
+                logging.info("[user_print_refer_path] POWER_LOSS_DATA: \n %s", data)
                 power_loss_switch = data.get("power_loss", {}).get("switch", False)
         bl24c16f = self.printer.lookup_object('bl24c16f') if "bl24c16f" in self.printer.objects else None
         eepromState = bl24c16f.checkEepromFirstEnable() if power_loss_switch and bl24c16f else True
+        self.gcode.run_script('EEPROM_DEBUG_READ ADDR=0 SIZE=56')
+        logging.info("power_loss_switch is %s, bl24c16f is %s, eepromState is %s", power_loss_switch, bl24c16f, eepromState)
         if not eepromState:
             response["eeprom_state"] = True
         print_stats = self.printer.lookup_object('print_stats', None)
+        logging.info("print_stats.state is %s", print_stats.state)
         if response["file_state"] == True and response["eeprom_state"] == True and print_stats and print_stats.state == "standby":
             print_stats.power_loss = 1
         if print_stats and print_stats.state != "standby":
@@ -181,6 +187,7 @@ class PauseResume:
             return
         if self.resume_err == True:
             logging.info("resume_err is True")
+            self.reactor.pause(self.reactor.monotonic() + 0.5)
             self.resume_err = False
             return
         velocity = gcmd.get_float('VELOCITY', self.recover_velocity)
