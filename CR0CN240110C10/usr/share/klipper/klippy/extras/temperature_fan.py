@@ -14,6 +14,7 @@ class TemperatureFan:
     def __init__(self, config):
         self.name = config.get_name().split()[1]
         self.printer = config.get_printer()
+        self.gcode = self.printer.lookup_object('gcode')
         self.fan = fan.Fan(config, default_shutdown_speed=1.)
         self.min_temp = config.getfloat('min_temp', minval=KELVIN_TO_CELSIUS)
         self.max_temp = config.getfloat('max_temp', above=self.min_temp)
@@ -45,7 +46,16 @@ class TemperatureFan:
             "SET_TEMPERATURE_FAN_TARGET", "TEMPERATURE_FAN", self.name,
             self.cmd_SET_TEMPERATURE_FAN_TARGET,
             desc=self.cmd_SET_TEMPERATURE_FAN_TARGET_help)
-
+        gcode.register_mux_command(
+            "SET_TEMPERATURE_FAN_SWITCH", "TEMPERATURE_FAN", self.name,
+            self.cmd_SET_TEMPERATURE_FAN_SWITCH,
+            desc=self.cmd_SET_TEMPERATURE_FAN_SWITCH_help)
+        self.temperature_fan_switch = 0
+        self.printer.register_event_handler('klippy:ready',self._cancel_control_fan)
+        
+    def _cancel_control_fan(self):
+        self.gcode.run_script_from_command("CANCEL_CHAMBER_FAN_SWITCH")
+    
     def set_speed(self, read_time, value):
         if value <= 0.:
             value = 0.
@@ -60,7 +70,15 @@ class TemperatureFan:
         speed_time = read_time + self.speed_delay
         self.next_speed_time = speed_time + 0.75 * MAX_FAN_TIME
         self.last_speed_value = value
-        self.fan.set_speed(speed_time, value)
+        if self.temperature_fan_switch == 1:
+            self.fan.set_speed(speed_time, value)
+        else:
+            self.fan.set_speed(speed_time, 0)
+
+    cmd_SET_TEMPERATURE_FAN_SWITCH_help = "set temperature fan is open or close"
+    def cmd_SET_TEMPERATURE_FAN_SWITCH(self,gcmd):
+        self.temperature_fan_switch = gcmd.get_int('VALUE', default=0)
+
     def temperature_callback(self, read_time, temp):
         self.last_temp = temp
         self.control.temperature_callback(read_time, temp)
